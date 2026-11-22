@@ -46,10 +46,15 @@ interface FileLines {
   br: string;
   finalBreak: boolean;
 }
+/** A text's line break (section 3): CRLF when its first line feed follows a carriage return, LF otherwise. */
+function lineBreakOf(text: string): string {
+  const nl = text.indexOf('\n');
+  return nl > 0 && text[nl - 1] === '\r' ? '\r\n' : '\n';
+}
+
 function splitLines(text: string): FileLines {
   if (text === '') return { lines: [], br: '\n', finalBreak: false };
-  const nl = text.indexOf('\n');
-  const br = nl > 0 && text[nl - 1] === '\r' ? '\r\n' : '\n';
+  const br = lineBreakOf(text);
   const parts = text.split(br);
   let finalBreak = false;
   if (text.endsWith(br)) {
@@ -684,8 +689,7 @@ function jsonEdit(v: unknown): Edit | null {
     const newStr = (o.new_str as string | undefined) ?? '';
     return (tree) => {
       const before = exists(tree);
-      const nl = before.indexOf('\n');
-      const crlf = nl > 0 && before[nl - 1] === '\r';
+      const crlf = lineBreakOf(before) === '\r\n';
       const lf = (s: string): string => (crlf ? s.replaceAll('\r\n', '\n') : s);
       const t = lf(before);
       const old = lf(oldStr);
